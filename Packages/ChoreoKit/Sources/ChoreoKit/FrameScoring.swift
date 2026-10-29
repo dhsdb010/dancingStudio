@@ -6,6 +6,11 @@ public struct Limb: Sendable, Hashable {
     public let from: BodyJoint
     public let to: BodyJoint
 
+    public init(from: BodyJoint, to: BodyJoint) {
+        self.from = from
+        self.to = to
+    }
+
     public static let all: [Limb] = [
         Limb(from: .leftShoulder, to: .leftElbow), Limb(from: .leftElbow, to: .leftWrist),
         Limb(from: .rightShoulder, to: .rightElbow), Limb(from: .rightElbow, to: .rightWrist),

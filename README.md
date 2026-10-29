@@ -11,12 +11,13 @@ See [docs/PLAN.md](docs/PLAN.md) for the research and roadmap.
 ## Layout
 - `Packages/PoseKit`: pose data model and normalization. The Vision body/hand pose provider goes here too.
 - `Packages/ChoreoKit`: segmentation and scoring, built on PoseKit.
-- The iOS app target (SwiftUI) is not created yet. It needs Xcode 16+.
+- `DancingStudio.xcodeproj` and `DancingStudio/`: the SwiftUI app (iOS 17+). It uses folder-synced groups, so new files in `DancingStudio/` are added to the target automatically.
 
 ## Develop
 ```bash
 swift test --package-path Packages/PoseKit
 swift test --package-path Packages/ChoreoKit
+xcodebuild -project DancingStudio.xcodeproj -scheme DancingStudio -destination 'generic/platform=iOS Simulator' build
 ```
-With only the Command Line Tools installed (no Xcode), SwiftPM can't find the Swift Testing macros. Add this to the command:
-`-Xswiftc -plugin-path -Xswiftc /Library/Developer/CommandLineTools/usr/lib/swift/host/plugins/testing`
+To run on your iPhone, open the project in Xcode and choose your team under Signing & Capabilities. Live camera scoring only works on a real device.
+Package tests need Xcode as the active developer directory (`xcode-select -p`). With only the Command Line Tools active, SwiftPM can't find the Swift Testing macros.

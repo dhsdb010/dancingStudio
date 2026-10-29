@@ -1,0 +1,289 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D5A000000000000000000B01 /* PoseKit in Frameworks */ = {isa = PBXBuildFile; productRef = D5A000000000000000000D01 /* PoseKit */; };
+		D5A000000000000000000B02 /* ChoreoKit in Frameworks */ = {isa = PBXBuildFile; productRef = D5A000000000000000000D02 /* ChoreoKit */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		D5A000000000000000000F01 /* DancingStudio.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DancingStudio.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		D5A000000000000000000501 /* DancingStudio */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = DancingStudio;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D5A000000000000000000302 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D5A000000000000000000B01 /* PoseKit in Frameworks */,
+				D5A000000000000000000B02 /* ChoreoKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D5A000000000000000000601 = {
+			isa = PBXGroup;
+			children = (
+				D5A000000000000000000501 /* DancingStudio */,
+				D5A000000000000000000602 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D5A000000000000000000602 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D5A000000000000000000F01 /* DancingStudio.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D5A000000000000000000701 /* DancingStudio */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D5A000000000000000000C02 /* Build configuration list for PBXNativeTarget "DancingStudio" */;
+			buildPhases = (
+				D5A000000000000000000301 /* Sources */,
+				D5A000000000000000000302 /* Frameworks */,
+				D5A000000000000000000303 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D5A000000000000000000501 /* DancingStudio */,
+			);
+			name = DancingStudio;
+			packageProductDependencies = (
+				D5A000000000000000000D01 /* PoseKit */,
+				D5A000000000000000000D02 /* ChoreoKit */,
+			);
+			productName = DancingStudio;
+			productReference = D5A000000000000000000F01 /* DancingStudio.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D5A000000000000000000801 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					D5A000000000000000000701 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = D5A000000000000000000C01 /* Build configuration list for PBXProject "DancingStudio" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = D5A000000000000000000601;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				D5A000000000000000000E01 /* XCLocalSwiftPackageReference "Packages/PoseKit" */,
+				D5A000000000000000000E02 /* XCLocalSwiftPackageReference "Packages/ChoreoKit" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = D5A000000000000000000602 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D5A000000000000000000701 /* DancingStudio */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D5A000000000000000000303 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D5A000000000000000000301 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		D5A000000000000000000A01 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		D5A000000000000000000A02 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D5A000000000000000000A03 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Dancing Studio";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Dancing Studio uses the camera to follow your moves and score them while you practise.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Dancing Studio imports dance videos from your library to turn them into tutorials.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dhsdb010.DancingStudio;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		D5A000000000000000000A04 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Dancing Studio";
+				INFOPLIST_KEY_NSCameraUsageDescription = "Dancing Studio uses the camera to follow your moves and score them while you practise.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Dancing Studio imports dance videos from your library to turn them into tutorials.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.dhsdb010.DancingStudio;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D5A000000000000000000C01 /* Build configuration list for PBXProject "DancingStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5A000000000000000000A01 /* Debug */,
+				D5A000000000000000000A02 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D5A000000000000000000C02 /* Build configuration list for PBXNativeTarget "DancingStudio" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D5A000000000000000000A03 /* Debug */,
+				D5A000000000000000000A04 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		D5A000000000000000000E01 /* XCLocalSwiftPackageReference "Packages/PoseKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/PoseKit;
+		};
+		D5A000000000000000000E02 /* XCLocalSwiftPackageReference "Packages/ChoreoKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/ChoreoKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		D5A000000000000000000D01 /* PoseKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = PoseKit;
+		};
+		D5A000000000000000000D02 /* ChoreoKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ChoreoKit;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = D5A000000000000000000801 /* Project object */;
+}

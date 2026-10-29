@@ -61,12 +61,17 @@ Published student and academic systems report roughly 15% disagreement with huma
 - Split screen: the reference video or skeleton on one side, the mirrored front camera with a live skeleton on the other.
 - Each segment can loop at a chosen speed. Live scoring rates each beat, and a summary at the end shows the weakest moves.
 
-**Backend for studio features:** Firebase (Auth, Firestore, Storage, Cloud Messaging/APNs, Cloud Functions to send "new practice video" notifications).
-- Data model: Studio → Classes → Members (teacher or student roles) → Assignments (Routine reference).
+**Backend for studio features:** Supabase, using the official `supabase-swift` SDK.
+- **Postgres:** the database. Tables: `studios`, `classes`, `memberships` (role: teacher or student), `routines`, `segments`, `assignments`, `practice_sessions`.
+- **Row-level security:** enforces roles. Teachers write to their own studio's classes; students read the assignments for classes they belong to.
+- **Auth:** Sign in with Apple, plus email.
+- **Storage:** private buckets for videos and keypoint JSON, served through signed URLs.
+- **Edge Function on assignment insert:** sends the "new practice video" push through APNs.
+- **Realtime:** optional, for live updates to the teacher's progress view.
 - Teachers' devices do the processing and upload the processed keypoints with the video, so students don't need to re-analyse.
-- *Alternative:* Supabase, if you'd rather use SQL and avoid Google lock-in.
+- **SpacetimeDB was considered and not chosen.** The data changes only a few times a day, SpacetimeDB has no official Swift SDK, and it doesn't store large files. Revisit it only for live multiplayer features such as a synced group class or a dance battle, and try Supabase Realtime first.
 
-**Local data:** SwiftData for the memory library (saved Routines and segments, practice history and scores), synced to Firestore when signed in.
+**Local data:** SwiftData for the memory library (saved Routines and segments, practice history and scores), synced to Supabase when signed in.
 
 **Copyright and policy:** accept videos only from Photos or Files, never by downloading from YouTube or TikTok. Keep personal imports private and on-device. Only studio-owned videos are shared.
 
@@ -81,10 +86,11 @@ Published student and academic systems report roughly 15% disagreement with huma
 2. **Studio:** accounts and roles, studio and class creation with invite codes, teacher upload and slicing editor, assignment push notifications, and a view of student progress for teachers.
 3. **Library and polish:** the memory library, streaks and history, 3D avatar replay, and optional server-side MocapNET or GVHMR for higher-quality 3D.
 
-## Repo setup (first implementation step after approval)
-- An Xcode project `DancingStudio` with local packages `PoseKit` and `ChoreoKit`.
-- `.gitignore` for Xcode and SwiftPM.
-- A README with the vision, and a real `CLAUDE.md` once code exists (re-run `/init`).
+## Repo setup
+- Done: the Xcode project `DancingStudio.xcodeproj` (iOS 17+), with the app sources in `DancingStudio/` and local packages `PoseKit` and `ChoreoKit`.
+- Done: `.gitignore` and README.
+- To do: a real `CLAUDE.md` once more code exists (re-run `/init`).
+- To do: a `supabase/` folder (from `supabase init`) for migrations and Edge Functions.
 
 ## Verification
 - **Unit tests** (`swift test` in each package):
@@ -93,12 +99,12 @@ Published student and academic systems report roughly 15% disagreement with huma
   - Segmentation finds beat-aligned cuts on a metronome audio fixture.
 - **Spike benchmark script:** run pose extraction over the sample clips and log jitter and fps.
 - **On-device testing:** the camera needs a physical iPhone because the simulator has none. Use the iOS Simulator only for the UI flows.
-- **Studio flow:** use the Firebase emulator suite locally (Auth, Firestore, Functions) before hitting production.
+- **Studio flow:** run Supabase locally with the Supabase CLI (`supabase start`) and test the row-level security policies with pgTAP (`supabase test db`) before using the hosted project.
 
-## Open items for you
-- Do you have an Apple Developer account, a Mac with Xcode 16+, and a test iPhone?
-- Confirm Firebase (vs Supabase).
-- Confirm iOS 17 as the minimum version.
+## Decisions
+- Xcode and a test iPhone are available.
+- The backend is Supabase (Postgres).
+- iOS 17 is the minimum version.
 
 ## Sources
 [MocapNET](https://github.com/FORTH-ModelBasedTracker/MocapNET) · [RGBMocap](https://github.com/toyxyz/toyxyz_RGBMocap) · [FreeMoCap](https://github.com/freemocap/freemocap) · [Detect body and hand pose (WWDC20)](https://www.wwdcnotes.com/notes/wwdc20/10653/) · [VNDetectHumanHandPoseRequest](https://developer.apple.com/documentation/vision/vndetecthumanhandposerequest) · [Vision 3D body pose (WWDC23)](https://developer.apple.com/videos/play/wwdc2023/111241/) · [VNDetectHumanBodyPose3DRequest](https://developer.apple.com/documentation/vision/vndetecthumanbodypose3drequest) · [BlazePose](https://www.research.google/blog/on-device-real-time-body-pose-tracking-with-mediapipe-blazepose/) · [UCI dance pose estimation (DTW and cosine)](https://projects.eng.uci.edu/projects/2025-2026/dance-pose-estimation) · [Pose-sequence alignment](https://arxiv.org/pdf/2303.04244)
