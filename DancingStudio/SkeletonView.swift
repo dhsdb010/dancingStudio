@@ -36,12 +36,12 @@ struct SkeletonView: View {
                              with: .color(color))
             }
         }
-        .aspectRatio(0.6, contentMode: .fit)
         .accessibilityLabel("Dancer skeleton")
     }
 }
 
 #Preview {
     SkeletonView(frame: .samplePose)
+        .aspectRatio(0.6, contentMode: .fit)
         .padding()
 }

@@ -82,6 +82,7 @@ Published student and academic systems report roughly 15% disagreement with huma
   - Measure live fps on the oldest target iPhone for body only, body plus hands on every frame, and body plus hands on every 3rd frame.
    - Prototype the scoring and compare it with a teacher's judgement.
    - Decide the pose backend and the minimum iPhone.
+   - **Result, 2026-10-29, iPhone SE (3rd gen, A15):** live 2D body pose at 720p from the front camera holds about 30 fps, the camera's full frame rate, so Vision keeps up with every frame. The skeleton overlay lines up with the body, so the rotation and mirroring are correct. Not measured yet: hands, video import and the accuracy comparison against MediaPipe.
 1. **MVP (solo):** import and trim a video → process → auto-slice with manual adjustment → practise a segment with slow-down and live scoring → results screen.
 2. **Studio:** accounts and roles, studio and class creation with invite codes, teacher upload and slicing editor, assignment push notifications, and a view of student progress for teachers.
 3. **Library and polish:** the memory library, streaks and history, 3D avatar replay, and optional server-side MocapNET or GVHMR for higher-quality 3D.

@@ -28,12 +28,19 @@ private struct LearnView: View {
         NavigationStack {
             VStack(spacing: 24) {
                 SkeletonView(frame: .samplePose)
+                    .aspectRatio(0.6, contentMode: .fit)
                     .frame(height: 320)
                     .padding()
                     .background(.quaternary, in: .rect(cornerRadius: 16))
                 Text("Import a dance video to turn it into a step-by-step tutorial.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
+                NavigationLink {
+                    LivePoseView()
+                } label: {
+                    Label("Try live tracking", systemImage: "camera.viewfinder")
+                }
+                .buttonStyle(.borderedProminent)
             }
             .padding()
             .navigationTitle("Learn")
