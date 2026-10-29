@@ -24,6 +24,9 @@ final class PoseCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, 
     private let continuation: AsyncStream<Sample>.Continuation
     private let queue = DispatchQueue(label: "com.dhsdb010.DancingStudio.camera")
     private let detector = VisionBodyPoseDetector()
+    // Only touched on `queue`.
+    private var tracker = PoseTracker()
+    private var smoother = PoseSmoother()
 
     override init() {
         (samples, continuation) = AsyncStream.makeStream(bufferingPolicy: .bufferingNewest(1))
@@ -87,7 +90,13 @@ final class PoseCamera: NSObject, AVCaptureVideoDataOutputSampleBufferDelegate, 
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let time = CMSampleBufferGetPresentationTimeStamp(sampleBuffer).seconds
         let start = CACurrentMediaTime()
-        let pose = try? detector.detect(in: pixelBuffer, time: time)
+        let candidates = (try? detector.detectAll(in: pixelBuffer, time: time)) ?? []
+        var pose: PoseFrame?
+        if let dancer = tracker.select(from: candidates) {
+            pose = smoother.smooth(dancer)
+        } else {
+            smoother.reset()
+        }
         continuation.yield(Sample(pose: pose, detectionTime: CACurrentMediaTime() - start))
     }
 }

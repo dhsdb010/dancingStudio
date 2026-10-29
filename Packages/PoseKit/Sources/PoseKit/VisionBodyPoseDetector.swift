@@ -8,23 +8,25 @@ import Vision
 public struct VisionBodyPoseDetector: Sendable {
     public init() {}
 
-    /// Returns the first person Vision finds, or nil when nobody is in frame.
-    public func detect(
+    /// Returns one pose per person Vision finds, in no particular order.
+    /// Use `PoseTracker` to follow one dancer across frames.
+    public func detectAll(
         in pixelBuffer: CVPixelBuffer,
         orientation: CGImagePropertyOrientation = .up,
         time: TimeInterval
-    ) throws -> PoseFrame? {
+    ) throws -> [PoseFrame] {
         let request = VNDetectHumanBodyPoseRequest()
         try VNImageRequestHandler(cvPixelBuffer: pixelBuffer, orientation: orientation).perform([request])
-        guard let observation = request.results?.first else { return nil }
 
-        let points = try observation.recognizedPoints(.all)
-        var joints: [BodyJoint: JointPoint] = [:]
-        for joint in BodyJoint.allCases {
-            guard let p = points[joint.visionName] else { continue }
-            joints[joint] = JointPoint(x: p.location.x, y: p.location.y, confidence: Double(p.confidence))
+        return try (request.results ?? []).map { observation in
+            let points = try observation.recognizedPoints(.all)
+            var joints: [BodyJoint: JointPoint] = [:]
+            for joint in BodyJoint.allCases {
+                guard let p = points[joint.visionName] else { continue }
+                joints[joint] = JointPoint(x: p.location.x, y: p.location.y, confidence: Double(p.confidence))
+            }
+            return PoseFrame(time: time, joints: joints)
         }
-        return PoseFrame(time: time, joints: joints)
     }
 }
 

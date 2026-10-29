@@ -1,3 +1,4 @@
+import PhotosUI
 import SwiftUI
 import PoseKit
 
@@ -24,6 +25,11 @@ struct ContentView: View {
 }
 
 private struct LearnView: View {
+    @State private var pickerItem: PhotosPickerItem?
+    @State private var importedVideo: PickedVideo?
+    @State private var isImporting = false
+    @State private var importError: String?
+
     var body: some View {
         NavigationStack {
             VStack(spacing: 24) {
@@ -35,15 +41,49 @@ private struct LearnView: View {
                 Text("Import a dance video to turn it into a step-by-step tutorial.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
+                PhotosPicker(selection: $pickerItem, matching: .videos) {
+                    if isImporting {
+                        ProgressView()
+                    } else {
+                        Label("Import a dance video", systemImage: "square.and.arrow.down")
+                    }
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isImporting)
                 NavigationLink {
                     LivePoseView()
                 } label: {
                     Label("Try live tracking", systemImage: "camera.viewfinder")
                 }
-                .buttonStyle(.borderedProminent)
+                .buttonStyle(.bordered)
             }
             .padding()
             .navigationTitle("Learn")
+            .navigationDestination(item: $importedVideo) { video in
+                PrepareRoutineView(video: video)
+            }
+            .onChange(of: pickerItem) { _, item in
+                guard let item else { return }
+                Task { await load(item) }
+            }
+            .alert("Couldn't import the video", isPresented: .constant(importError != nil)) {
+                Button("OK") { importError = nil }
+            } message: {
+                Text(importError ?? "")
+            }
+        }
+    }
+
+    private func load(_ item: PhotosPickerItem) async {
+        isImporting = true
+        defer {
+            isImporting = false
+            pickerItem = nil
+        }
+        do {
+            importedVideo = try await item.loadTransferable(type: PickedVideo.self)
+        } catch {
+            importError = error.localizedDescription
         }
     }
 }

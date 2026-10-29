@@ -6,7 +6,7 @@ import Testing
     var buffer: CVPixelBuffer?
     CVPixelBufferCreate(nil, 360, 640, kCVPixelFormatType_32BGRA, nil, &buffer)
     let pixelBuffer = try #require(buffer)
-    #expect(try VisionBodyPoseDetector().detect(in: pixelBuffer, time: 0) == nil)
+    #expect(try VisionBodyPoseDetector().detectAll(in: pixelBuffer, time: 0).isEmpty)
 }
 
 @Test func everyJointMapsToADistinctVisionJoint() {
