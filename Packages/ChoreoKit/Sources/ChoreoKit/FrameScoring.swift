@@ -47,7 +47,8 @@ public func scoreFrame(reference: PoseFrame, user: PoseFrame) -> FrameScore? {
     return FrameScore(similarity: total / Double(count), worstLimb: worst?.limb)
 }
 
-private func direction(of limb: Limb, in frame: PoseFrame) -> (x: Double, y: Double)? {
+/// The limb's unit direction vector, or nil when either joint is missing.
+func direction(of limb: Limb, in frame: PoseFrame) -> (x: Double, y: Double)? {
     guard let a = frame.point(limb.from), let b = frame.point(limb.to) else { return nil }
     let dx = b.x - a.x, dy = b.y - a.y
     let len = hypot(dx, dy)

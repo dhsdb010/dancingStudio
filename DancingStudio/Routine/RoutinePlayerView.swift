@@ -5,17 +5,17 @@ import PoseKit
 /// Loops the trimmed part of the video with the extracted skeleton on top,
 /// with slow-motion speeds for learning the moves.
 struct RoutinePlayerView: View {
+    let url: URL
     let sequence: PoseSequence
     let displaySize: CGSize
     @State private var model: RoutinePlayerModel
 
     init(url: URL, sequence: PoseSequence, displaySize: CGSize) {
+        self.url = url
         self.sequence = sequence
         self.displaySize = displaySize
         _model = State(initialValue: RoutinePlayerModel(url: url, start: sequence.start, end: sequence.end))
     }
-
-    private static let speeds: [Float] = [0.25, 0.5, 0.75, 1]
 
     var body: some View {
         VStack(spacing: 16) {
@@ -31,18 +31,21 @@ struct RoutinePlayerView: View {
             .background(.black)
             .clipShape(.rect(cornerRadius: 12))
 
-            Picker("Speed", selection: $model.rate) {
-                ForEach(Self.speeds, id: \.self) { speed in
-                    Text(speed == 1 ? "1×" : "\(speed.formatted())×").tag(speed)
-                }
-            }
-            .pickerStyle(.segmented)
+            SpeedPicker(rate: $model.rate)
 
-            Button(model.isPlaying ? "Pause" : "Play",
-                   systemImage: model.isPlaying ? "pause.fill" : "play.fill") {
-                model.togglePlayback()
+            HStack {
+                Button(model.isPlaying ? "Pause" : "Play",
+                       systemImage: model.isPlaying ? "pause.fill" : "play.fill") {
+                    model.togglePlayback()
+                }
+                .buttonStyle(.bordered)
+                NavigationLink {
+                    PracticeView(url: url, sequence: sequence, displaySize: displaySize)
+                } label: {
+                    Label("Practice", systemImage: "figure.dance")
+                }
+                .buttonStyle(.borderedProminent)
             }
-            .buttonStyle(.borderedProminent)
 
             Text("\(detectedPercent)% of frames have a detected dancer")
                 .font(.footnote)
@@ -57,6 +60,22 @@ struct RoutinePlayerView: View {
         guard !sequence.frames.isEmpty else { return 0 }
         let detected = sequence.frames.filter { !$0.joints.isEmpty }.count
         return detected * 100 / sequence.frames.count
+    }
+}
+
+/// Slow-motion speeds for learning the moves.
+struct SpeedPicker: View {
+    @Binding var rate: Float
+
+    private static let speeds: [Float] = [0.25, 0.5, 0.75, 1]
+
+    var body: some View {
+        Picker("Speed", selection: $rate) {
+            ForEach(Self.speeds, id: \.self) { speed in
+                Text(speed == 1 ? "1×" : "\(speed.formatted())×").tag(speed)
+            }
+        }
+        .pickerStyle(.segmented)
     }
 }
 
@@ -85,6 +104,8 @@ final class RoutinePlayerModel {
     }
 
     func play() {
+        // Play the music even with the silent switch on.
+        try? AVAudioSession.sharedInstance().setCategory(.playback)
         player.rate = rate
         isPlaying = true
     }
@@ -97,9 +118,13 @@ final class RoutinePlayerModel {
     func togglePlayback() {
         isPlaying ? pause() : play()
     }
+
+    func seek(to time: TimeInterval) {
+        player.seek(to: CMTime(seconds: time, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero)
+    }
 }
 
-private struct PlayerLayerView: UIViewRepresentable {
+struct PlayerLayerView: UIViewRepresentable {
     let player: AVPlayer
 
     func makeUIView(context: Context) -> LayerView {

@@ -18,6 +18,8 @@ final class LivePoseModel {
     /// Vision time for the latest frame, in milliseconds.
     private(set) var detectionMs: Double = 0
     private(set) var camera: PoseCamera?
+    /// Called with every camera result, including nil when nobody is tracked.
+    var onSample: ((PoseFrame?) -> Void)?
 
     /// Runs until the calling task is cancelled, e.g. when the view disappears.
     func run() async {
@@ -43,6 +45,7 @@ final class LivePoseModel {
         var frames = 0
         for await sample in camera.samples {
             pose = sample.pose
+            onSample?(sample.pose)
             detectionMs = sample.detectionTime * 1000
             frames += 1
             let elapsed = Date.now.timeIntervalSince(windowStart)

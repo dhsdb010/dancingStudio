@@ -61,3 +61,11 @@ private func makeBlankVideo(seconds: Int, fps: Int32) async throws -> URL {
     #expect(abs(sequence.frame(at: 0.36)!.time - 0.4) < 1e-9)
     #expect(sequence.frame(at: 5) == nil)
 }
+
+@Test func framesInRangeLookup() {
+    let frames = (0..<10).map { PoseFrame(time: Double($0) / 10, joints: [:]) }
+    let sequence = PoseSequence(start: 0, end: 1, frames: frames)
+    #expect(sequence.frames(in: 0.25...0.55).map(\.time) == [0.3, 0.4, 0.5])
+    #expect(sequence.frames(in: -1...(-0.5)).isEmpty)
+    #expect(sequence.frames(in: 0.9...2).count == 1)
+}
