@@ -31,13 +31,19 @@ private func pose(leftWrist: (Double, Double)) -> PoseFrame {
     #expect(scoreFrame(reference: empty, user: pose(leftWrist: (-3, 2))) == nil)
 }
 
-@Test func limbsMissingFromTheUserCountAgainstThem() throws {
+@Test func onlyLimbsMissingBeyondTheFirstTwoCountAgainstTheUser() throws {
     let reference = pose(leftWrist: (-3, 2))
     var user = reference
     user.joints[.leftWrist] = nil
-    let score = try #require(scoreFrame(reference: reference, user: user))
-    #expect(score.missingLimbs == 1)
-    #expect(score.similarity < 1)
+    user.joints[.rightWrist] = nil
+    let forgiven = try #require(scoreFrame(reference: reference, user: user))
+    #expect(forgiven.missingLimbs == 2)
+    #expect(forgiven.similarity == 1)
+
+    user.joints[.leftElbow] = nil  // also loses the left upper arm
+    let penalized = try #require(scoreFrame(reference: reference, user: user))
+    #expect(penalized.missingLimbs == 3)
+    #expect(penalized.similarity < 1)
     // Limbs only the user shows don't matter.
     #expect(scoreFrame(reference: user, user: reference)?.similarity == 1)
 }

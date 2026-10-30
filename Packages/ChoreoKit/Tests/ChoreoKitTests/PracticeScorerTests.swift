@@ -170,16 +170,18 @@ private let armsOnly: Set<BodyJoint> = [.leftShoulder, .rightShoulder, .leftElbo
         user.joints = user.joints.filter { !legs.contains($0.key) }
         s.add(user: user, at: t)
     }
+    // Four leg limbs missing: two forgiven, two penalized.
     let result = s.finish()
-    #expect(result?.rating == .ok)
+    #expect(result?.rating == .good)
 }
 
-@Test func aBrieflyDroppedJointStillScoresPerfect() {
+@Test func feetAtTheFrameEdgeStillScorePerfect() {
     var s = scorer(routine { _ in 0 })
     for i in 0..<15 {
         let t = Double(i) / 30
         var user = figure(time: t, armAngle: 0)
-        user.joints[.leftWrist] = nil
+        user.joints[.leftAnkle] = nil
+        user.joints[.rightAnkle] = nil
         s.add(user: user, at: t)
     }
     #expect(s.finish()?.rating == .perfect)

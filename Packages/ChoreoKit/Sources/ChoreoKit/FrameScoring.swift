@@ -32,12 +32,16 @@ public struct FrameScore: Sendable {
 
 /// Compares one reference frame with one user frame using the cosine similarity
 /// of limb directions, so body proportions and limb lengths don't matter.
-/// A limb the reference shows but the user's frame doesn't (out of view or not
-/// detected) scores `missingLimbSimilarity`, so matching one visible arm isn't
-/// a perfect pose. The default 0.5 is what a perpendicular limb scores: one
-/// briefly dropped joint barely matters, but half a body out of frame does.
-/// Returns nil when the reference shows no limbs.
-public func scoreFrame(reference: PoseFrame, user: PoseFrame, missingLimbSimilarity: Double = 0.5) -> FrameScore? {
+///
+/// Limbs the reference shows but the user's frame doesn't (out of view or not
+/// detected) are handled in two tiers. The first `forgivenMissingLimbs` are
+/// skipped, since feet at the frame edge or a forearm Vision loses for a moment
+/// are normal at home. Each one beyond that scores `missingLimbSimilarity`, the
+/// same as a perpendicular limb, so matching one visible arm while the rest of
+/// the body is out of frame isn't a perfect pose.
+/// Returns nil when no limb can be scored.
+public func scoreFrame(reference: PoseFrame, user: PoseFrame,
+                       forgivenMissingLimbs: Int = 2, missingLimbSimilarity: Double = 0.5) -> FrameScore? {
     var total = 0.0
     var count = 0
     var missing = 0
@@ -46,8 +50,6 @@ public func scoreFrame(reference: PoseFrame, user: PoseFrame, missingLimbSimilar
     for limb in Limb.all {
         guard let r = direction(of: limb, in: reference) else { continue }
         guard let u = direction(of: limb, in: user) else {
-            total += missingLimbSimilarity
-            count += 1
             missing += 1
             continue
         }
@@ -57,6 +59,9 @@ public func scoreFrame(reference: PoseFrame, user: PoseFrame, missingLimbSimilar
         count += 1
         if worst == nil || sim < worst!.sim { worst = (limb, sim) }
     }
+    let penalized = max(0, missing - forgivenMissingLimbs)
+    total += Double(penalized) * missingLimbSimilarity
+    count += penalized
     guard count > 0 else { return nil }
     return FrameScore(similarity: total / Double(count), worstLimb: worst?.limb, missingLimbs: missing)
 }
