@@ -1,9 +1,11 @@
 import AVFoundation
+import SwiftData
 import SwiftUI
 import PoseKit
 
 /// Trim an imported video to the part to learn, then extract its poses and
-/// find its beat. Shows the step-by-step player when analysis finishes.
+/// find its beat. Saves the result to the library and shows the step-by-step
+/// player.
 struct PrepareRoutineView: View {
     let video: PickedVideo
 
@@ -12,6 +14,9 @@ struct PrepareRoutineView: View {
     @State private var start: TimeInterval = 0
     @State private var end: TimeInterval = 0
     @State private var phase = Phase.trimming
+    /// "Saved to Library", or why saving failed; shown briefly over the player.
+    @State private var saveMessage: String?
+    @Environment(\.modelContext) private var modelContext
 
     private enum Phase {
         case trimming
@@ -47,6 +52,18 @@ struct PrepareRoutineView: View {
                 trimForm
             }
         }
+        .overlay(alignment: .bottom) {
+            if let saveMessage {
+                Text(saveMessage)
+                    .font(.footnote.weight(.semibold))
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(.regularMaterial, in: .capsule)
+                    .padding(.bottom, 8)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .animation(.snappy, value: saveMessage)
         .navigationTitle("New routine")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
@@ -104,10 +121,23 @@ struct PrepareRoutineView: View {
                 }
             }
             phase = .findingBeat
-            phase = .ready(await RoutineAnalysis.make(url: video.url, sequence: sequence))
+            let analysis = await RoutineAnalysis.make(url: video.url, sequence: sequence)
+            phase = .ready(analysis)
+            await save(analysis)
         } catch {
             phase = .failed(error.localizedDescription)
         }
+    }
+
+    private func save(_ analysis: RoutineAnalysis) async {
+        do {
+            try await RoutineStore.save(video: video.url, analysis: analysis, displaySize: displaySize, in: modelContext)
+            saveMessage = "Saved to Library"
+        } catch {
+            saveMessage = "Couldn't save to Library: \(error.localizedDescription)"
+        }
+        try? await Task.sleep(for: .seconds(2.5))
+        saveMessage = nil
     }
 
     static func format(_ seconds: TimeInterval) -> String {

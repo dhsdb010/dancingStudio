@@ -3,7 +3,7 @@ import SwiftUI
 import PoseKit
 
 /// Top-level tabs, one per area of the plan: solo learning, studio practice
-/// and the personal move library. Each tab is a placeholder for now.
+/// (a placeholder for now) and the personal move library.
 struct ContentView: View {
     var body: some View {
         TabView {
@@ -11,7 +11,7 @@ struct ContentView: View {
                 .tabItem { Label("Learn", systemImage: "figure.dance") }
             placeholder("Studio", detail: "Practice videos from your teachers will appear here.")
                 .tabItem { Label("Studio", systemImage: "globe") }
-            placeholder("Library", detail: "Moves you've learned will be collected here.")
+            LibraryView()
                 .tabItem { Label("Library", systemImage: "books.vertical") }
         }
     }

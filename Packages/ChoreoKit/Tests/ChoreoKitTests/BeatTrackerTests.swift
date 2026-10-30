@@ -139,3 +139,10 @@ func findsTheTempoOfAClickTrack(bpm: Double) throws {
     #expect(sections.last?.end == 11)
     #expect(zip(sections, sections.dropFirst()).allSatisfy { $0.end == $1.start })
 }
+
+@Test func beatsAndSectionsSurviveAJSONRoundTrip() throws {
+    let grid = BeatGrid(bpm: 126, beats: [0.1, 0.58, 1.05], firstDownbeat: 1)
+    let sections = [RoutineSection(index: 0, start: 0.58, end: 4.4)]
+    #expect(try JSONDecoder().decode(BeatGrid.self, from: JSONEncoder().encode(grid)) == grid)
+    #expect(try JSONDecoder().decode([RoutineSection].self, from: JSONEncoder().encode(sections)) == sections)
+}

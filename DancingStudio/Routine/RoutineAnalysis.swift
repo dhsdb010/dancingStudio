@@ -3,8 +3,8 @@ import PoseKit
 import ChoreoKit
 
 /// Everything analysis produces for one trimmed clip: the dancer's poses, the
-/// music's beat and the tutorial sections.
-struct RoutineAnalysis {
+/// music's beat and the tutorial sections. Saved with the routine as JSON.
+struct RoutineAnalysis: Codable, Sendable {
     let sequence: PoseSequence
     /// Nil when the clip has no audio or no steady beat.
     let beats: BeatGrid?

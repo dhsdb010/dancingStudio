@@ -76,3 +76,11 @@ private func makeBlankVideo(seconds: Int, fps: Int32) async throws -> URL {
     #expect(slice.start == 0.25 && slice.end == 0.55)
     #expect(slice.frames.map(\.time) == [0.3, 0.4, 0.5])
 }
+
+@Test func sequenceSurvivesAJSONRoundTrip() throws {
+    let frame = PoseFrame(time: 1.5, joints: [.neck: JointPoint(x: 0.5, y: 0.7, confidence: 0.9),
+                                              .leftWrist: JointPoint(x: 0.2, y: 0.4)])
+    let sequence = PoseSequence(start: 1, end: 3, frames: [frame, PoseFrame(time: 1.6, joints: [:])])
+    let decoded = try JSONDecoder().decode(PoseSequence.self, from: JSONEncoder().encode(sequence))
+    #expect(decoded == sequence)
+}
