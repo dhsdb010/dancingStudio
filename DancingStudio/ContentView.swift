@@ -41,15 +41,17 @@ private struct LearnView: View {
                 Text("Import a dance video to turn it into a step-by-step tutorial.")
                     .multilineTextAlignment(.center)
                     .foregroundStyle(.secondary)
+                // The label closure is @Sendable, so the importing state is
+                // shown from outside it.
                 PhotosPicker(selection: $pickerItem, matching: .videos) {
-                    if isImporting {
-                        ProgressView()
-                    } else {
-                        Label("Import a dance video", systemImage: "square.and.arrow.down")
-                    }
+                    Label("Import a dance video", systemImage: "square.and.arrow.down")
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(isImporting)
+                .opacity(isImporting ? 0 : 1)
+                .overlay {
+                    if isImporting { ProgressView() }
+                }
                 NavigationLink {
                     LivePoseView()
                 } label: {
