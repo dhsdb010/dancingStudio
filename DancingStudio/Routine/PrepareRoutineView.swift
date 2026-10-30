@@ -5,8 +5,10 @@ import PoseKit
 import ChoreoKit
 
 /// Trim an imported video to the part to learn with a Photos-style trimmer
-/// (the start becomes count 1), then extract its poses. Saves the result to
-/// the library and shows the step-by-step player.
+/// (the start becomes count 1), then extract its poses and show the
+/// step-by-step player. The dancer chooses whether to save it to the library,
+/// under a name of their own ("Dance 3" by default), and is asked before
+/// leaving an unsaved one.
 struct PrepareRoutineView: View {
     let video: PickedVideo
 
@@ -22,7 +24,16 @@ struct PrepareRoutineView: View {
     @State private var findingBeats = true
     /// "Saved to Library", or why saving failed; shown briefly over the player.
     @State private var saveMessage: String?
+    /// The name it was saved under; nil while unsaved.
+    @State private var savedTitle: String?
+    @State private var showingNamePrompt = false
+    @State private var nameDraft = ""
+    @State private var showingLeavePrompt = false
+    /// Leave once the save from the leave prompt finishes.
+    @State private var leaveAfterSaving = false
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
+    @Query private var savedRoutines: [SavedRoutine]
 
     private enum Phase {
         case trimming
@@ -58,22 +69,83 @@ struct PrepareRoutineView: View {
                 trimForm
             }
         }
-        .overlay(alignment: .bottom) {
+        // At the top, clear of the playback and practice buttons.
+        .overlay(alignment: .top) {
             if let saveMessage {
                 Text(saveMessage)
                     .font(.footnote.weight(.semibold))
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
                     .background(.regularMaterial, in: .capsule)
-                    .padding(.bottom, 8)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                    .padding(.top, 8)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
         }
         .animation(.snappy, value: saveMessage)
-        .navigationTitle("New routine")
+        .navigationTitle(savedTitle ?? "New routine")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .tabBar)
+        // A custom back button so leaving an unsaved dance can ask first.
+        // (Hiding the system one also stops the swipe-back gesture.)
+        .navigationBarBackButtonHidden(isUnsaved)
+        .toolbar {
+            if isUnsaved {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Back", systemImage: "chevron.left") { showingLeavePrompt = true }
+                }
+            }
+            if isReady {
+                ToolbarItem(placement: .topBarTrailing) {
+                    if savedTitle == nil {
+                        Button("Save") { promptForName() }
+                            .fontWeight(.semibold)
+                    } else {
+                        Label("Saved", systemImage: "checkmark")
+                            .labelStyle(.titleAndIcon)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+        }
+        .alert("Save dance", isPresented: $showingNamePrompt) {
+            TextField("Name", text: $nameDraft)
+            Button("Save") { Task { await save() } }
+            Button("Cancel", role: .cancel) { leaveAfterSaving = false }
+        } message: {
+            Text("Name it to find it later in your Library.")
+        }
+        .confirmationDialog("Save this dance before leaving?", isPresented: $showingLeavePrompt,
+                            titleVisibility: .visible) {
+            Button("Save…") {
+                leaveAfterSaving = true
+                promptForName()
+            }
+            Button("Don't Save", role: .destructive) { dismiss() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("If you don't save it, you'll need to import and analyze the video again.")
+        }
         .task { await loadVideoInfo() }
+    }
+
+    private var isReady: Bool {
+        if case .ready = phase { true } else { false }
+    }
+
+    private var isUnsaved: Bool { isReady && savedTitle == nil }
+
+    /// "Dance N", one past the highest number already used.
+    private var defaultName: String {
+        let used = savedRoutines.compactMap { routine -> Int? in
+            guard routine.title.hasPrefix("Dance ") else { return nil }
+            return Int(routine.title.dropFirst("Dance ".count))
+        }
+        return "Dance \((used.max() ?? 0) + 1)"
+    }
+
+    private func promptForName() {
+        nameDraft = defaultName
+        showingNamePrompt = true
     }
 
     @ViewBuilder
@@ -252,18 +324,27 @@ struct PrepareRoutineView: View {
             phase = .findingBeat
             let analysis = await RoutineAnalysis.make(url: video.url, sequence: sequence, beats: fullBeats)
             phase = .ready(analysis)
-            await save(analysis)
         } catch {
             phase = .failed(error.localizedDescription)
         }
     }
 
-    private func save(_ analysis: RoutineAnalysis) async {
+    private func save() async {
+        guard case .ready(let analysis) = phase else { return }
+        let name = nameDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = name.isEmpty ? defaultName : name
         do {
-            try await RoutineStore.save(video: video.url, analysis: analysis, displaySize: displaySize, in: modelContext)
-            saveMessage = "Saved to Library"
+            try await RoutineStore.save(video: video.url, analysis: analysis, displaySize: displaySize,
+                                        title: title, in: modelContext)
+            savedTitle = title
+            if leaveAfterSaving {
+                dismiss()
+                return
+            }
+            saveMessage = "Saved to Library as \u{201C}\(title)\u{201D}"
         } catch {
-            saveMessage = "Couldn't save to Library: \(error.localizedDescription)"
+            leaveAfterSaving = false
+            saveMessage = "Couldn't save: \(error.localizedDescription)"
         }
         try? await Task.sleep(for: .seconds(2.5))
         saveMessage = nil

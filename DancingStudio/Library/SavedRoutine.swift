@@ -61,7 +61,7 @@ enum RoutineStore {
     /// Copies the video into the library and saves the analysis with it.
     @discardableResult
     static func save(video: URL, analysis: RoutineAnalysis, displaySize: CGSize,
-                     in context: ModelContext) async throws -> SavedRoutine {
+                     title: String, in context: ModelContext) async throws -> SavedRoutine {
         let id = UUID()
         let fileName = "\(id.uuidString).\(video.pathExtension.isEmpty ? "mov" : video.pathExtension)"
         let destination = directory.appending(path: fileName)
@@ -69,7 +69,7 @@ enum RoutineStore {
 
         let routine = SavedRoutine(
             id: id,
-            title: "Routine · \(Date.now.formatted(date: .abbreviated, time: .shortened))",
+            title: title,
             videoFileName: fileName,
             displaySize: displaySize,
             analysis: analysis,

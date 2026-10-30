@@ -60,7 +60,13 @@ public struct VideoPoseExtractor: Sendable {
                   let pixelBuffer = CMSampleBufferGetImageBuffer(sample) else { continue }
             lastTime = time
 
+            #if targetEnvironment(simulator)
+            // Vision body pose can't run in the iOS Simulator; carry on with no
+            // dancer so the rest of the flow (beat, phrases, saving) can be tried.
+            let candidates = (try? detector.detectAll(in: pixelBuffer, orientation: orientation, time: time)) ?? []
+            #else
             let candidates = try detector.detectAll(in: pixelBuffer, orientation: orientation, time: time)
+            #endif
             if let dancer = tracker.select(from: candidates) {
                 frames.append(smoother.smooth(dancer))
             } else {
