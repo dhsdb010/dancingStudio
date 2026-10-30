@@ -29,7 +29,16 @@ final class PracticeModel {
         camera.onSample = { [weak self] pose in self?.score(pose) }
     }
 
+    /// How closely the dancer matches right now, updated every camera frame.
+    private(set) var liveSimilarity: Double?
+
     var latest: StepResult? { results.last }
+
+    /// The rating the dancer is on track for at this moment, while dancing.
+    var liveRating: StepRating? {
+        guard phase == .dancing, let liveSimilarity else { return nil }
+        return scorer.rating(for: liveSimilarity)
+    }
     var isActive: Bool { phase == .dancing || phase.isCountdown }
     var commonFeedback: [LimbFeedback] { scorer.commonFeedback() }
 
@@ -63,6 +72,7 @@ final class PracticeModel {
         player.pause()
         if phase != .ready { phase = .paused }
         if scorer.finish() != nil { results = scorer.results }
+        liveSimilarity = nil
     }
 
     /// Clears the scores and rewinds to the start of the routine.
@@ -77,10 +87,15 @@ final class PracticeModel {
     private func score(_ pose: PoseFrame?) {
         guard phase == .dancing else { return }
         let time = player.player.currentTime().seconds
-        // ±0.3 s of real time; at slower speeds that's less video time.
-        let window = 0.3 * Double(player.rate)
-        if scorer.add(user: pose, at: time, window: window) != nil {
+        // Learners react to the video, so allow up to 0.5 s of real time late
+        // but only 0.2 s early. At slower speeds that's less video time.
+        let rate = Double(player.rate)
+        if scorer.add(user: pose, at: time, late: 0.5 * rate, early: 0.2 * rate) != nil {
             results = scorer.results
+        }
+        if let similarity = scorer.frameSimilarity {
+            // Light smoothing so the colour doesn't flicker frame to frame.
+            liveSimilarity = liveSimilarity.map { $0 + 0.3 * (similarity - $0) } ?? similarity
         }
     }
 }

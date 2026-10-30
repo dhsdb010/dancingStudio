@@ -104,3 +104,41 @@ private func scorer(_ reference: PoseSequence) -> PracticeScorer {
     s.add(user: narrow, at: 0)
     #expect(s.finish()?.rating == .perfect)
 }
+
+@Test func reactingHalfASecondLateIsStillPerfect() {
+    var s = scorer(routine())
+    let results = dance(&s) { figure(time: $0, armAngle: swingAngle(max(0, $0 - 0.45))) }
+    #expect(results.allSatisfy { $0.rating == .perfect })
+}
+
+@Test func beingWellAheadIsMarkedDown() {
+    var s = scorer(routine())
+    let results = dance(&s) { figure(time: $0, armAngle: swingAngle($0 + 0.45)) }
+    #expect(results.contains { $0.rating != .perfect })
+}
+
+@Test func frameSimilarityFollowsTheLatestFrame() {
+    var s = scorer(routine())
+    s.add(user: figure(time: 0, armAngle: 0), at: 0)
+    #expect(s.frameSimilarity == 1)
+    s.add(user: nil, at: 0.1)
+    #expect(s.frameSimilarity == 0)
+
+    let empty = PoseSequence(start: 0, end: 1, frames: [PoseFrame(time: 0, joints: [:])])
+    var nothing = scorer(empty)
+    nothing.add(user: figure(time: 0, armAngle: 0), at: 0)
+    #expect(nothing.frameSimilarity == nil)
+}
+
+@Test func tipNamesTheSideWhenOnlyTheUpperBodyIsVisible() throws {
+    var s = scorer(routine { _ in .pi / 2 })
+    let armsOnly: Set<BodyJoint> = [.leftShoulder, .rightShoulder, .leftElbow, .rightElbow, .leftWrist, .rightWrist]
+    for i in 0..<15 {
+        let t = Double(i) / 30
+        var user = figure(time: t, armAngle: -.pi / 2)
+        user.joints = user.joints.filter { armsOnly.contains($0.key) }
+        s.add(user: user, at: t)
+    }
+    let feedback = try #require(s.finish()?.feedback)
+    #expect(feedback.side == .right)
+}

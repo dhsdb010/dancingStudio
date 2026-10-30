@@ -77,7 +77,7 @@ struct PracticeView: View {
                     CameraPreview(session: session)
                 }
                 if let pose = model.camera.pose {
-                    SkeletonView(frame: pose, color: model.latest?.rating.color ?? .white)
+                    SkeletonView(frame: pose, color: model.liveRating?.color ?? .white)
                 }
             case .starting:
                 ProgressView()
@@ -111,9 +111,17 @@ struct PracticeView: View {
     private var feedback: some View {
         VStack(spacing: 4) {
             if let result = model.latest, model.phase != .ready {
+                // A pop on each new step instead of a crossfade, which left
+                // the old word showing through the new one.
                 Text(result.rating.title)
                     .font(.largeTitle.weight(.heavy))
                     .foregroundStyle(result.rating.color)
+                    .keyframeAnimator(initialValue: 1.0, trigger: model.results.count) { content, scale in
+                        content.scaleEffect(scale)
+                    } keyframes: { _ in
+                        SpringKeyframe(1.15, duration: 0.08)
+                        SpringKeyframe(1.0, duration: 0.2)
+                    }
                 Text(result.feedback?.message
                      ?? (result.rating == .perfect ? "Keep it up!" : "Keep your whole body in view."))
                     .font(.subheadline)
@@ -126,7 +134,6 @@ struct PracticeView: View {
         }
         .multilineTextAlignment(.center)
         .frame(height: 72)
-        .animation(.snappy, value: model.results.count)
     }
 
     private var tally: some View {

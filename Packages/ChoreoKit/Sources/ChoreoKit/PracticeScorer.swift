@@ -40,9 +40,10 @@ public struct StepResult: Sendable {
 /// Scores live frames against a reference routine step by step, like a rhythm
 /// game rating each beat.
 ///
-/// Each user frame is compared with every reference frame within `window`
-/// seconds of the current playback time and keeps the best match, so dancing
-/// slightly late or early isn't punished. Poses are compared as they appear on
+/// Each user frame is compared with every reference frame from `late` seconds
+/// before to `early` seconds after the current playback time and keeps the
+/// best match, so a learner reacting to the video a beat late isn't punished.
+/// Poses are compared as they appear on
 /// screen: a learner mirroring a teacher who faces the camera matches the
 /// teacher's screen image. Vision sometimes swaps left and right labels, so
 /// each frame is also tried with its labels swapped.
@@ -56,6 +57,9 @@ public struct PracticeScorer: Sendable {
     public var hintThreshold = 0.35
 
     public private(set) var results: [StepResult] = []
+    /// Similarity of the latest frame, for instant feedback between step
+    /// results; nil when that frame couldn't be scored.
+    public private(set) var frameSimilarity: Double?
 
     private let reference: PoseSequence
     private let referenceAspect: Double
@@ -72,16 +76,20 @@ public struct PracticeScorer: Sendable {
     }
 
     /// Scores one live frame taken while the reference was at `time`. Pass nil
-    /// when no dancer was detected; that counts as a miss. Returns the result
-    /// of the previous step when this frame starts a new one, including when
-    /// playback loops back to the start.
+    /// when no dancer was detected; that counts as a miss. `late` and `early`
+    /// are how far behind or ahead of the reference the user may be, in
+    /// reference seconds. Returns the result of the previous step when this
+    /// frame starts a new one, including when playback loops back to the start.
     @discardableResult
-    public mutating func add(user: PoseFrame?, at time: TimeInterval, window: TimeInterval = 0.3) -> StepResult? {
+    public mutating func add(user: PoseFrame?, at time: TimeInterval,
+                             late: TimeInterval = 0.5, early: TimeInterval = 0.2) -> StepResult? {
         let index = Int(((time - reference.start) / stepLength).rounded(.down))
         var finished: StepResult?
         if let step, step.index != index { finished = finish() }
 
-        guard let match = match(user, at: time, window: window) else { return finished }
+        let match = match(user, in: (time - late)...(time + early))
+        frameSimilarity = match?.similarity
+        guard let match else { return finished }
         var current = step ?? Step(index: index)
         current.total += match.similarity
         current.count += 1
@@ -111,6 +119,7 @@ public struct PracticeScorer: Sendable {
     public mutating func reset() {
         results = []
         step = nil
+        frameSimilarity = nil
     }
 
     /// The corrections that came up most across all steps, most common first.
@@ -120,7 +129,7 @@ public struct PracticeScorer: Sendable {
         return Array(counts.ranked.prefix(limit))
     }
 
-    private func rating(for similarity: Double) -> StepRating {
+    public func rating(for similarity: Double) -> StepRating {
         switch similarity {
         case perfectThreshold...: .perfect
         case goodThreshold...: .good
@@ -129,10 +138,10 @@ public struct PracticeScorer: Sendable {
         }
     }
 
-    /// The best similarity against the reference frames near `time`, or nil
+    /// The best similarity against the reference frames in `range`, or nil
     /// when the reference dancer isn't visible there (nothing to score).
-    private func match(_ user: PoseFrame?, at time: TimeInterval, window: TimeInterval) -> (similarity: Double, feedback: LimbFeedback?)? {
-        let candidates = reference.frames(in: (time - window)...(time + window)).filter { !$0.joints.isEmpty }
+    private func match(_ user: PoseFrame?, in range: ClosedRange<TimeInterval>) -> (similarity: Double, feedback: LimbFeedback?)? {
+        let candidates = reference.frames(in: range).filter { !$0.joints.isEmpty }
         guard !candidates.isEmpty else { return nil }
         guard let user, !user.joints.isEmpty else { return (0, nil) }
 
@@ -207,10 +216,23 @@ extension Limb {
     func screenSide(in frame: PoseFrame) -> LimbFeedback.Side? {
         guard part != .shoulders, part != .hips,
               let a = frame.point(from), let b = frame.point(to) else { return nil }
-        let centre = [BodyJoint.neck, .root, .leftHip, .rightHip].compactMap { frame.point($0)?.x }
-        guard !centre.isEmpty else { return nil }
-        let centreX = centre.reduce(0, +) / Double(centre.count)
+        guard let centreX = frame.centreLineX else { return nil }
         return (a.x + b.x) / 2 < centreX ? .left : .right
+    }
+}
+
+extension PoseFrame {
+    /// The x of the body's centre line from whatever torso joints are visible,
+    /// falling back to the nose when the dancer is close and cropped. Single
+    /// shoulders or hips are skipped since they'd pull it to one side.
+    var centreLineX: Double? {
+        var xs = [BodyJoint.neck, .root].compactMap { point($0)?.x }
+        for (l, r) in [(BodyJoint.leftShoulder, BodyJoint.rightShoulder), (.leftHip, .rightHip)] {
+            if let a = point(l), let b = point(r) { xs.append((a.x + b.x) / 2) }
+        }
+        if xs.isEmpty, let nose = point(.nose) { xs.append(nose.x) }
+        guard !xs.isEmpty else { return nil }
+        return xs.reduce(0, +) / Double(xs.count)
     }
 }
 
