@@ -110,7 +110,7 @@ private struct SavedRoutineView: View {
     var body: some View {
         Group {
             if let analysis = try? routine.analysis(),
-               FileManager.default.fileExists(atPath: routine.videoURL.path()) {
+               FileManager.default.fileExists(atPath: routine.videoURL.path(percentEncoded: false)) {
                 RoutinePlayerView(url: routine.videoURL, analysis: analysis, displaySize: routine.displaySize)
             } else {
                 ContentUnavailableView("Can't open this routine", systemImage: "exclamationmark.triangle",
