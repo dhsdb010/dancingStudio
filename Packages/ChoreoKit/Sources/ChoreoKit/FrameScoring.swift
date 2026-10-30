@@ -21,22 +21,36 @@ public struct Limb: Sendable, Hashable {
 }
 
 public struct FrameScore: Sendable {
-    /// 0 (opposite) to 1 (identical), averaged over limbs visible in both frames.
+    /// 0 (opposite) to 1 (identical), averaged over the limbs visible in the
+    /// reference.
     public let similarity: Double
-    /// The limb that differs most, for feedback such as "left arm too low".
+    /// The visible limb that differs most, for feedback such as "left arm too low".
     public let worstLimb: Limb?
+    /// Limbs visible in the reference but not in the user's frame.
+    public let missingLimbs: Int
 }
 
 /// Compares one reference frame with one user frame using the cosine similarity
 /// of limb directions, so body proportions and limb lengths don't matter.
-/// Returns nil when no limb is visible in both frames.
-public func scoreFrame(reference: PoseFrame, user: PoseFrame) -> FrameScore? {
+/// A limb the reference shows but the user's frame doesn't (out of view or not
+/// detected) scores `missingLimbSimilarity`, so matching one visible arm isn't
+/// a perfect pose. The default 0.5 is what a perpendicular limb scores: one
+/// briefly dropped joint barely matters, but half a body out of frame does.
+/// Returns nil when the reference shows no limbs.
+public func scoreFrame(reference: PoseFrame, user: PoseFrame, missingLimbSimilarity: Double = 0.5) -> FrameScore? {
     var total = 0.0
     var count = 0
+    var missing = 0
     var worst: (limb: Limb, sim: Double)?
 
     for limb in Limb.all {
-        guard let r = direction(of: limb, in: reference), let u = direction(of: limb, in: user) else { continue }
+        guard let r = direction(of: limb, in: reference) else { continue }
+        guard let u = direction(of: limb, in: user) else {
+            total += missingLimbSimilarity
+            count += 1
+            missing += 1
+            continue
+        }
         // Map cosine from [-1, 1] to [0, 1].
         let sim = ((r.x * u.x + r.y * u.y) + 1) / 2
         total += sim
@@ -44,7 +58,7 @@ public func scoreFrame(reference: PoseFrame, user: PoseFrame) -> FrameScore? {
         if worst == nil || sim < worst!.sim { worst = (limb, sim) }
     }
     guard count > 0 else { return nil }
-    return FrameScore(similarity: total / Double(count), worstLimb: worst?.limb)
+    return FrameScore(similarity: total / Double(count), worstLimb: worst?.limb, missingLimbs: missing)
 }
 
 /// The limb's unit direction vector, or nil when either joint is missing.

@@ -30,3 +30,14 @@ private func pose(leftWrist: (Double, Double)) -> PoseFrame {
     let empty = PoseFrame(time: 0, joints: [:])
     #expect(scoreFrame(reference: empty, user: pose(leftWrist: (-3, 2))) == nil)
 }
+
+@Test func limbsMissingFromTheUserCountAgainstThem() throws {
+    let reference = pose(leftWrist: (-3, 2))
+    var user = reference
+    user.joints[.leftWrist] = nil
+    let score = try #require(scoreFrame(reference: reference, user: user))
+    #expect(score.missingLimbs == 1)
+    #expect(score.similarity < 1)
+    // Limbs only the user shows don't matter.
+    #expect(scoreFrame(reference: user, user: reference)?.similarity == 1)
+}

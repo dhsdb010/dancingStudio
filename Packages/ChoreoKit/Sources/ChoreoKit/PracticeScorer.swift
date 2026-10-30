@@ -33,7 +33,8 @@ public struct StepResult: Sendable {
     /// Mean frame similarity over the step, 0 to 1.
     public let similarity: Double
     public let rating: StepRating
-    /// The most common correction in the step; nil for perfect steps.
+    /// The most common correction in the step. Nil for perfect steps and for
+    /// steps where the dancer was mostly out of view.
     public let feedback: LimbFeedback?
 }
 
@@ -55,6 +56,9 @@ public struct PracticeScorer: Sendable {
     /// How much a limb's vertical direction must differ before the feedback
     /// says "raise" or "lower" rather than "adjust".
     public var hintThreshold = 0.35
+    /// A frame missing at least this many of the reference's limbs counts as
+    /// out of view: its tip is to get the whole body in frame, not a limb fix.
+    public var outOfViewLimbs = 3
 
     public private(set) var results: [StepResult] = []
     /// Similarity of the latest frame, for instant feedback between step
@@ -93,7 +97,11 @@ public struct PracticeScorer: Sendable {
         var current = step ?? Step(index: index)
         current.total += match.similarity
         current.count += 1
-        if let feedback = match.feedback { current.add(feedback) }
+        if match.outOfView {
+            current.outOfView += 1
+        } else if let feedback = match.feedback {
+            current.add(feedback)
+        }
         step = current
         return finished
     }
@@ -140,10 +148,10 @@ public struct PracticeScorer: Sendable {
 
     /// The best similarity against the reference frames in `range`, or nil
     /// when the reference dancer isn't visible there (nothing to score).
-    private func match(_ user: PoseFrame?, in range: ClosedRange<TimeInterval>) -> (similarity: Double, feedback: LimbFeedback?)? {
+    private func match(_ user: PoseFrame?, in range: ClosedRange<TimeInterval>) -> (similarity: Double, feedback: LimbFeedback?, outOfView: Bool)? {
         let candidates = reference.frames(in: range).filter { !$0.joints.isEmpty }
         guard !candidates.isEmpty else { return nil }
-        guard let user, !user.joints.isEmpty else { return (0, nil) }
+        guard let user, !user.joints.isEmpty else { return (0, nil, true) }
 
         let stretched = user.stretched(by: userAspect)
         let options = [stretched, stretched.swappingSides()]
@@ -156,10 +164,11 @@ public struct PracticeScorer: Sendable {
                 best = (score, reference, option)
             }
         }
-        // No limb visible in both, e.g. only the user's head is in frame.
-        guard let best else { return (0, nil) }
+        // The reference shows no limbs, e.g. only its dancer's head.
+        guard let best else { return nil }
+        if best.score.missingLimbs >= outOfViewLimbs { return (best.score.similarity, nil, true) }
         let feedback = best.score.worstLimb.flatMap { self.feedback(for: $0, reference: best.reference, user: best.user) }
-        return (best.score.similarity, feedback)
+        return (best.score.similarity, feedback, false)
     }
 
     private func feedback(for limb: Limb, reference: PoseFrame, user: PoseFrame) -> LimbFeedback? {
@@ -175,9 +184,13 @@ public struct PracticeScorer: Sendable {
         var total = 0.0
         var count = 0
         var feedback = Tally()
+        var outOfView = 0
 
         mutating func add(_ item: LimbFeedback) { feedback.add(item) }
-        var topFeedback: LimbFeedback? { feedback.ranked.first }
+        /// Nil when being out of view was the bigger problem.
+        var topFeedback: LimbFeedback? {
+            outOfView >= feedback.topCount ? nil : feedback.ranked.first
+        }
     }
 }
 
@@ -192,6 +205,8 @@ private struct Tally: Sendable {
             items.append((feedback, 1))
         }
     }
+
+    var topCount: Int { items.map(\.count).max() ?? 0 }
 
     var ranked: [LimbFeedback] {
         items.enumerated()

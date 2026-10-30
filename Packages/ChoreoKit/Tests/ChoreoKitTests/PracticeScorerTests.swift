@@ -130,9 +130,13 @@ private func scorer(_ reference: PoseSequence) -> PracticeScorer {
     #expect(nothing.frameSimilarity == nil)
 }
 
+private let armsOnly: Set<BodyJoint> = [.leftShoulder, .rightShoulder, .leftElbow, .rightElbow, .leftWrist, .rightWrist]
+
 @Test func tipNamesTheSideWhenOnlyTheUpperBodyIsVisible() throws {
-    var s = scorer(routine { _ in .pi / 2 })
-    let armsOnly: Set<BodyJoint> = [.leftShoulder, .rightShoulder, .leftElbow, .rightElbow, .leftWrist, .rightWrist]
+    // A reference that only shows arms too, so nothing counts as out of view.
+    var reference = routine { _ in .pi / 2 }
+    reference.frames = reference.frames.map { PoseFrame(time: $0.time, joints: $0.joints.filter { armsOnly.contains($0.key) }) }
+    var s = scorer(reference)
     for i in 0..<15 {
         let t = Double(i) / 30
         var user = figure(time: t, armAngle: -.pi / 2)
@@ -141,4 +145,42 @@ private func scorer(_ reference: PoseSequence) -> PracticeScorer {
     }
     let feedback = try #require(s.finish()?.feedback)
     #expect(feedback.side == .right)
+}
+
+@Test func oneMatchingArmIsNotAPerfectPose() {
+    var s = scorer(routine { _ in 0 })
+    for i in 0..<15 {
+        let t = Double(i) / 30
+        var user = figure(time: t, armAngle: 0)
+        user.joints = user.joints.filter { [.leftShoulder, .leftElbow, .leftWrist, .neck].contains($0.key) }
+        s.add(user: user, at: t)
+    }
+    let result = s.finish()
+    #expect(result?.rating == .miss)
+    // The tip is to get in view (no limb feedback), not to fix the arm.
+    #expect(result != nil && result?.feedback == nil)
+}
+
+@Test func legsOutOfFrameCapsTheRating() {
+    var s = scorer(routine { _ in 0 })
+    let legs: Set<BodyJoint> = [.leftKnee, .rightKnee, .leftAnkle, .rightAnkle]
+    for i in 0..<15 {
+        let t = Double(i) / 30
+        var user = figure(time: t, armAngle: 0)
+        user.joints = user.joints.filter { !legs.contains($0.key) }
+        s.add(user: user, at: t)
+    }
+    let result = s.finish()
+    #expect(result?.rating == .ok)
+}
+
+@Test func aBrieflyDroppedJointStillScoresPerfect() {
+    var s = scorer(routine { _ in 0 })
+    for i in 0..<15 {
+        let t = Double(i) / 30
+        var user = figure(time: t, armAngle: 0)
+        user.joints[.leftWrist] = nil
+        s.add(user: user, at: t)
+    }
+    #expect(s.finish()?.rating == .perfect)
 }
