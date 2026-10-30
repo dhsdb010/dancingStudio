@@ -97,14 +97,18 @@ struct RoutinePlayerView: View {
 
     private var summary: String {
         let count = analysis.sections.count
-        if let beats = analysis.beats {
-            return "\(Int(beats.bpm.rounded())) BPM · \(count) eight-count\(count == 1 ? "" : "s")"
+        guard let beats = analysis.beats else {
+            return "No steady beat found · \(count) part\(count == 1 ? "" : "s")"
         }
-        return "No steady beat found · \(count) part\(count == 1 ? "" : "s")"
+        let bpm = "\(Int(beats.bpm.rounded())) BPM"
+        guard analysis.sectionsArePhrases else {
+            return "\(bpm) · shorter than one 8-count · \(count) part\(count == 1 ? "" : "s")"
+        }
+        return "\(bpm) · \(count) eight-count\(count == 1 ? "" : "s")"
     }
 
     private func title(for section: RoutineSection) -> String {
-        analysis.beats == nil ? "part \(section.index + 1)" : "8-count \(section.index + 1)"
+        analysis.sectionsArePhrases ? "8-count \(section.index + 1)" : "part \(section.index + 1)"
     }
 
     private var practiceSequence: PoseSequence {

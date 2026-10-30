@@ -18,17 +18,25 @@ public struct RoutineSection: Codable, Hashable, Identifiable, Sendable {
 
 /// Splits a routine into tutorial sections.
 public enum Sectioner {
-    /// One section per 8-count phrase, the way dancers learn choreography.
-    /// Cuts fall on every 8th beat from the first downbeat. A pickup before
-    /// the first "1" that's shorter than a whole phrase joins phrase 1 (you
-    /// count it in as "5, 6, 7, 8"), and a tail shorter than four beats joins
-    /// the last phrase, so no section is a few loose beats.
+    /// One section per 8-count phrase, the way dancers learn choreography:
+    /// each runs from a "1" to the next "1", exactly eight counts. A pickup
+    /// before the first "1" and a partial phrase at the end aren't sections of
+    /// their own; they still play when the whole routine does. Empty when the
+    /// clip is shorter than one phrase.
     public static func eightCounts(_ grid: BeatGrid, start: TimeInterval, end: TimeInterval) -> [RoutineSection] {
-        let beat = 60 / grid.bpm
-        let cuts = stride(from: grid.firstDownbeat, to: grid.beats.count, by: 8)
-            .map { grid.beats[$0] }
-            .filter { $0 > start + 7.5 * beat && $0 < end - 4 * beat }
-        return sections(cutAt: cuts, start: start, end: end)
+        let phrase = 8 * 60 / grid.bpm
+        // A little slack so a phrase ending right at the trim point counts.
+        let slack = phrase / 32
+        var sections: [RoutineSection] = []
+        for downbeat in stride(from: grid.firstDownbeat, to: grid.beats.count, by: 8) {
+            let phraseStart = grid.beats[downbeat]
+            // The next "1" when the grid has it, else one phrase later.
+            let phraseEnd = downbeat + 8 < grid.beats.count ? grid.beats[downbeat + 8] : phraseStart + phrase
+            guard phraseStart >= start - slack else { continue }
+            guard phraseEnd <= end + slack else { break }
+            sections.append(RoutineSection(index: sections.count, start: max(start, phraseStart), end: min(end, phraseEnd)))
+        }
+        return sections
     }
 
     /// Equal sections of about `length` seconds, for videos without a usable

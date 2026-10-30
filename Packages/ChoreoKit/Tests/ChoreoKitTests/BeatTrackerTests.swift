@@ -102,13 +102,34 @@ func findsTheTempoOfAClickTrack(bpm: Double) throws {
     expectBeats(grid, near: track.beats)
 }
 
-@Test func slicesIntoEightCounts() {
+@Test func slicesIntoWholeEightCountPhrases() {
     let grid = BeatGrid(bpm: 120, beats: stride(from: 0.1, to: 20, by: 0.5).map { $0 }, firstDownbeat: 1)
     let sections = Sectioner.eightCounts(grid, start: 0, end: 20)
-    // The 0.6 s pickup joins the first 8-count; the 3.4 s tail is its own section.
-    #expect(sections.map(\.start) == [0, 4.6, 8.6, 12.6, 16.6])
-    #expect(sections.last?.end == 20)
-    #expect(sections.map(\.index) == [0, 1, 2, 3, 4])
+    // Each phrase runs "1" to "1": the 0.6 s pickup and the 3.4 s tail are
+    // left out of the sections.
+    #expect(sections.map(\.start) == [0.6, 4.6, 8.6, 12.6])
+    #expect(sections.map(\.end) == [4.6, 8.6, 12.6, 16.6])
+    #expect(sections.map(\.index) == [0, 1, 2, 3])
+}
+
+@Test func phrasesStartOnTheOneAfterAPickup() {
+    // Three beats (1.5 s) before the first "1".
+    let grid = BeatGrid(bpm: 120, beats: stride(from: 0.0, to: 20, by: 0.5).map { $0 }, firstDownbeat: 3)
+    let sections = Sectioner.eightCounts(grid, start: 0, end: 20)
+    #expect(sections.map(\.start) == [1.5, 5.5, 9.5, 13.5])
+    #expect(sections.allSatisfy { abs($0.duration - 4) < 1e-9 })
+}
+
+@Test func aPhraseEndingAtTheTrimPointCounts() {
+    // The grid stops one beat short of the last "1", so its end is extrapolated.
+    let grid = BeatGrid(bpm: 120, beats: stride(from: 0.0, to: 7.6, by: 0.5).map { $0 }, firstDownbeat: 0)
+    let sections = Sectioner.eightCounts(grid, start: 0, end: 8)
+    #expect(sections.map(\.end) == [4, 8])
+}
+
+@Test func tooShortForAPhraseHasNoSections() {
+    let grid = BeatGrid(bpm: 120, beats: stride(from: 0.0, to: 3, by: 0.5).map { $0 }, firstDownbeat: 0)
+    #expect(Sectioner.eightCounts(grid, start: 0, end: 3).isEmpty)
 }
 
 @Test func fixedLengthSectionsCoverTheRoutine() {
@@ -117,14 +138,4 @@ func findsTheTempoOfAClickTrack(bpm: Double) throws {
     #expect(sections.first?.start == 1)
     #expect(sections.last?.end == 11)
     #expect(zip(sections, sections.dropFirst()).allSatisfy { $0.end == $1.start })
-}
-
-@Test func aPickupOfSeveralBeatsJoinsPhraseOne() {
-    // Three beats (1.5 s) before the first "1": phrase 1 runs from the start
-    // to the second "1", and every later phrase is 8 beats long.
-    let grid = BeatGrid(bpm: 120, beats: stride(from: 0.0, to: 20, by: 0.5).map { $0 }, firstDownbeat: 3)
-    let sections = Sectioner.eightCounts(grid, start: 0, end: 20)
-    #expect(sections.first?.start == 0)
-    #expect(sections.first?.end == 5.5)
-    #expect(sections.dropFirst().dropLast().allSatisfy { abs($0.duration - 4) < 1e-9 })
 }
