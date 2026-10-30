@@ -154,3 +154,25 @@ func findsTheTempoOfAClickTrack(bpm: Double) throws {
     #expect(Sectioner.eightCounts(grid, start: 0, end: 8.5).map(\.end) == [4, 8])
     #expect(Sectioner.eightCounts(grid, start: 0, end: 9).map(\.end) == [4, 8, 9])
 }
+
+@Test func trimmingCountsFromTheTrimStart() throws {
+    let grid = BeatGrid(bpm: 120, beats: stride(from: 0.0, to: 20, by: 0.5).map { $0 }, firstDownbeat: 1)
+    // A start a little after a beat still counts that beat as the "1".
+    let trimmed = try #require(grid.trimmed(from: 3.05, to: 10))
+    #expect(trimmed.beats.first == 3)
+    #expect(trimmed.beats.last == 10)
+    #expect(trimmed.count(at: 3.1) == 1)
+    #expect(trimmed.count(at: 2.99) == 1)   // a frame just before the beat
+    #expect(trimmed.count(at: 6.6) == 8)
+    #expect(trimmed.count(at: 7.1) == 1)
+    // Phrases now start right at the trim, with no lead-in.
+    #expect(Sectioner.eightCounts(trimmed, start: 3.05, end: 10).first?.start == 3.05)
+    #expect(grid.trimmed(from: 19.8, to: 20) == nil)
+}
+
+@Test func findsTheNearestBeat() {
+    let grid = BeatGrid(bpm: 120, beats: [0, 0.5, 1, 1.5], firstDownbeat: 0)
+    #expect(grid.nearestBeat(to: 0.7) == 0.5)
+    #expect(grid.nearestBeat(to: 0.8) == 1)
+    #expect(BeatGrid(bpm: 120, beats: [], firstDownbeat: 0).nearestBeat(to: 1) == nil)
+}

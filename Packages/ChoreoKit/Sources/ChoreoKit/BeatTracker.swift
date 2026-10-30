@@ -15,6 +15,21 @@ public struct BeatGrid: Codable, Equatable, Sendable {
         self.firstDownbeat = firstDownbeat
     }
 
+    /// The beats between `start` and `end`, counting from `start`: the first
+    /// beat at (or a quarter beat before) `start` becomes the "1". This is how
+    /// a trim sets where the counts begin. Nil when fewer than two beats remain.
+    public func trimmed(from start: TimeInterval, to end: TimeInterval) -> BeatGrid? {
+        let tolerance = 60 / bpm / 4
+        let kept = beats.filter { $0 >= start - tolerance && $0 <= end }
+        guard kept.count >= 2 else { return nil }
+        return BeatGrid(bpm: bpm, beats: kept, firstDownbeat: 0)
+    }
+
+    /// The beat nearest `time`, or nil without beats.
+    public func nearestBeat(to time: TimeInterval) -> TimeInterval? {
+        beats.min { abs($0 - time) < abs($1 - time) }
+    }
+
     /// The dancer's count (1–8) at `time`. Beats before the first downbeat
     /// count in as the end of a phrase ("6, 7, 8"), and the moment before the
     /// first detected beat counts as the beat before it, so a loop that starts
@@ -22,8 +37,11 @@ public struct BeatGrid: Codable, Equatable, Sendable {
     public func count(at time: TimeInterval) -> Int? {
         guard let first = beats.first else { return nil }
         let beat = 60 / bpm
+        // A frame landing a hair before a beat (a video frame vs. the detected
+        // onset) shows that beat's count.
+        let early = min(0.05, beat / 8)
         let index: Int
-        if let last = beats.lastIndex(where: { $0 <= time }) {
+        if let last = beats.lastIndex(where: { $0 <= time + early }) {
             guard time - beats[last] < beat * 1.5 else { return nil }
             index = last
         } else {
