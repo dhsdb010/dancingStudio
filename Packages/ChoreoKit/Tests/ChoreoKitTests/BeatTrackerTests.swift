@@ -69,7 +69,8 @@ func findsTheTempoOfAClickTrack(bpm: Double) throws {
 
 @Test func countsOneToEightFromTheDownbeat() {
     let grid = BeatGrid(bpm: 120, beats: stride(from: 0.0, to: 10, by: 0.5).map { $0 }, firstDownbeat: 2)
-    #expect(grid.count(at: 0.6) == nil)   // before the first "1"
+    #expect(grid.count(at: 0.1) == 7)     // pickup: "7, 8, 1"
+    #expect(grid.count(at: 0.6) == 8)
     #expect(grid.count(at: 1.1) == 1)
     #expect(grid.count(at: 1.6) == 2)
     #expect(grid.count(at: 4.6) == 8)
@@ -102,7 +103,7 @@ func findsTheTempoOfAClickTrack(bpm: Double) throws {
 @Test func slicesIntoEightCounts() {
     let grid = BeatGrid(bpm: 120, beats: stride(from: 0.1, to: 20, by: 0.5).map { $0 }, firstDownbeat: 1)
     let sections = Sectioner.eightCounts(grid, start: 0, end: 20)
-    // The 0.6 s lead-in joins the first 8-count; the 3.4 s tail is a full section.
+    // The 0.6 s pickup joins the first 8-count; the 3.4 s tail is its own section.
     #expect(sections.map(\.start) == [0, 4.6, 8.6, 12.6, 16.6])
     #expect(sections.last?.end == 20)
     #expect(sections.map(\.index) == [0, 1, 2, 3, 4])
@@ -114,4 +115,14 @@ func findsTheTempoOfAClickTrack(bpm: Double) throws {
     #expect(sections.first?.start == 1)
     #expect(sections.last?.end == 11)
     #expect(zip(sections, sections.dropFirst()).allSatisfy { $0.end == $1.start })
+}
+
+@Test func aPickupOfSeveralBeatsJoinsPhraseOne() {
+    // Three beats (1.5 s) before the first "1": phrase 1 runs from the start
+    // to the second "1", and every later phrase is 8 beats long.
+    let grid = BeatGrid(bpm: 120, beats: stride(from: 0.0, to: 20, by: 0.5).map { $0 }, firstDownbeat: 3)
+    let sections = Sectioner.eightCounts(grid, start: 0, end: 20)
+    #expect(sections.first?.start == 0)
+    #expect(sections.first?.end == 5.5)
+    #expect(sections.dropFirst().dropLast().allSatisfy { abs($0.duration - 4) < 1e-9 })
 }

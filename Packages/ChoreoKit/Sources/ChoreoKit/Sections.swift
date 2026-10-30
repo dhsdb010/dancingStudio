@@ -18,15 +18,16 @@ public struct RoutineSection: Codable, Hashable, Identifiable, Sendable {
 
 /// Splits a routine into tutorial sections.
 public enum Sectioner {
-    /// One section per 8-count, the way dancers learn choreography. Cuts fall
-    /// on every 8th beat from the first downbeat. A lead-in shorter than two
-    /// beats joins the first 8-count, and a tail shorter than four beats joins
-    /// the last, so no section is a sliver.
+    /// One section per 8-count phrase, the way dancers learn choreography.
+    /// Cuts fall on every 8th beat from the first downbeat. A pickup before
+    /// the first "1" that's shorter than a whole phrase joins phrase 1 (you
+    /// count it in as "5, 6, 7, 8"), and a tail shorter than four beats joins
+    /// the last phrase, so no section is a few loose beats.
     public static func eightCounts(_ grid: BeatGrid, start: TimeInterval, end: TimeInterval) -> [RoutineSection] {
         let beat = 60 / grid.bpm
         let cuts = stride(from: grid.firstDownbeat, to: grid.beats.count, by: 8)
             .map { grid.beats[$0] }
-            .filter { $0 > start + 2 * beat && $0 < end - 4 * beat }
+            .filter { $0 > start + 7.5 * beat && $0 < end - 4 * beat }
         return sections(cutAt: cuts, start: start, end: end)
     }
 
