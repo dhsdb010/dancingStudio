@@ -69,6 +69,8 @@ func findsTheTempoOfAClickTrack(bpm: Double) throws {
 
 @Test func countsOneToEightFromTheDownbeat() {
     let grid = BeatGrid(bpm: 120, beats: stride(from: 0.0, to: 10, by: 0.5).map { $0 }, firstDownbeat: 2)
+    #expect(grid.count(at: -0.2) == 6)    // just before the first beat
+    #expect(grid.count(at: -2) == nil)    // well before the beats
     #expect(grid.count(at: 0.1) == 7)     // pickup: "7, 8, 1"
     #expect(grid.count(at: 0.6) == 8)
     #expect(grid.count(at: 1.1) == 1)

@@ -16,11 +16,21 @@ public struct BeatGrid: Codable, Equatable, Sendable {
     }
 
     /// The dancer's count (1–8) at `time`. Beats before the first downbeat
-    /// count in as the end of a phrase ("6, 7, 8"). Nil outside the beats.
+    /// count in as the end of a phrase ("6, 7, 8"), and the moment before the
+    /// first detected beat counts as the beat before it, so a loop that starts
+    /// just ahead of the beat doesn't blank the count. Nil outside the beats.
     public func count(at time: TimeInterval) -> Int? {
-        guard let last = beats.lastIndex(where: { $0 <= time }),
-              time - beats[last] < 60 / bpm * 1.5 else { return nil }
-        let offset = (last - firstDownbeat) % 8
+        guard let first = beats.first else { return nil }
+        let beat = 60 / bpm
+        let index: Int
+        if let last = beats.lastIndex(where: { $0 <= time }) {
+            guard time - beats[last] < beat * 1.5 else { return nil }
+            index = last
+        } else {
+            guard time >= first - beat else { return nil }
+            index = -1
+        }
+        let offset = (index - firstDownbeat) % 8
         return (offset + 8) % 8 + 1
     }
 }
