@@ -98,7 +98,7 @@ private struct RoutineRow: View {
         var parts = [PrepareRoutineView.format(routine.duration)]
         if let bpm = routine.bpm { parts.append("\(Int(bpm.rounded())) BPM") }
         let n = routine.sectionCount
-        parts.append(routine.sectionsArePhrases ? "\(n) eight-count\(n == 1 ? "" : "s")" : "\(n) part\(n == 1 ? "" : "s")")
+        parts.append(routine.sectionsArePhrases ? "\(n) phrase\(n == 1 ? "" : "s")" : "\(n) part\(n == 1 ? "" : "s")")
         return parts.joined(separator: " · ")
     }
 }

@@ -76,7 +76,7 @@ struct RoutinePlayerView: View {
                 HStack(spacing: 8) {
                     chip("All", selected: section == nil) { section = nil }
                     ForEach(analysis.sections) { item in
-                        chip("\(item.index + 1)", selected: section == item) { section = item }
+                        chip(chipLabel(for: item), selected: section == item) { section = item }
                     }
                 }
             }
@@ -104,11 +104,30 @@ struct RoutinePlayerView: View {
         guard analysis.sectionsArePhrases else {
             return "\(bpm) · shorter than one 8-count · \(count) part\(count == 1 ? "" : "s")"
         }
-        return "\(bpm) · \(count) eight-count\(count == 1 ? "" : "s")"
+        let whole = analysis.sections.filter { partialCounts(of: $0) == nil }.count
+        var text = "\(bpm) · \(whole) eight-count\(whole == 1 ? "" : "s")"
+        if let tail = analysis.sections.last.flatMap(partialCounts(of:)) {
+            text += " + \(tail) counts"
+        }
+        return text
+    }
+
+    /// The number of counts in a phrase shorter than eight (the one at the
+    /// end of the clip), or nil for a whole phrase or a plain part.
+    private func partialCounts(of section: RoutineSection) -> Int? {
+        guard analysis.sectionsArePhrases, let beats = analysis.beats else { return nil }
+        let counts = Sectioner.counts(in: section, bpm: beats.bpm)
+        return counts < 8 ? counts : nil
+    }
+
+    private func chipLabel(for section: RoutineSection) -> String {
+        let number = "\(section.index + 1)"
+        return partialCounts(of: section).map { "\(number) (\($0) counts)" } ?? number
     }
 
     private func title(for section: RoutineSection) -> String {
-        analysis.sectionsArePhrases ? "8-count \(section.index + 1)" : "part \(section.index + 1)"
+        guard analysis.sectionsArePhrases else { return "part \(section.index + 1)" }
+        return partialCounts(of: section).map { "last \($0) counts" } ?? "8-count \(section.index + 1)"
     }
 
     private var practiceSequence: PoseSequence {
@@ -191,8 +210,6 @@ final class RoutinePlayerModel {
     }
 
     func play() {
-        // Play the music even with the silent switch on.
-        try? AVAudioSession.sharedInstance().setCategory(.playback)
         player.rate = rate
         isPlaying = true
     }

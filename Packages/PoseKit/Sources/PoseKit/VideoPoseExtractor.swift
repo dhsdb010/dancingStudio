@@ -67,7 +67,8 @@ public struct VideoPoseExtractor: Sendable {
                 smoother.reset()
                 frames.append(PoseFrame(time: time, joints: [:]))
             }
-            if end > start { progress(min(1, (time - start) / (end - start))) }
+            // The first frame can be stamped just before `start`, so clamp.
+            if end > start { progress(max(0, min(1, (time - start) / (end - start)))) }
         }
         if reader.status == .failed { throw ExtractionError.readerFailed(reader.error) }
         progress(1)

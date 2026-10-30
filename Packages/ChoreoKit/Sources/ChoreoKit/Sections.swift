@@ -19,12 +19,15 @@ public struct RoutineSection: Codable, Hashable, Identifiable, Sendable {
 /// Splits a routine into tutorial sections.
 public enum Sectioner {
     /// One section per 8-count phrase, the way dancers learn choreography:
-    /// each runs from a "1" to the next "1", exactly eight counts. A pickup
-    /// before the first "1" and a partial phrase at the end aren't sections of
-    /// their own; they still play when the whole routine does. Empty when the
-    /// clip is shorter than one phrase.
+    /// each runs from a "1" to the next "1", exactly eight counts. When the
+    /// clip ends partway through a phrase, those last counts (two or more)
+    /// are a final, shorter section so they can still be learned; see
+    /// `counts(in:bpm:)`. A pickup before the first "1" isn't a section of its
+    /// own; it plays when the whole routine does. Empty when the clip is
+    /// shorter than one phrase.
     public static func eightCounts(_ grid: BeatGrid, start: TimeInterval, end: TimeInterval) -> [RoutineSection] {
-        let phrase = 8 * 60 / grid.bpm
+        let beat = 60 / grid.bpm
+        let phrase = 8 * beat
         // A little slack so a phrase ending right at the trim point counts.
         let slack = phrase / 32
         var sections: [RoutineSection] = []
@@ -36,7 +39,16 @@ public enum Sectioner {
             guard phraseEnd <= end + slack else { break }
             sections.append(RoutineSection(index: sections.count, start: max(start, phraseStart), end: min(end, phraseEnd)))
         }
+        if let last = sections.last, end - last.end >= 2 * beat - slack {
+            sections.append(RoutineSection(index: sections.count, start: last.end, end: end))
+        }
         return sections
+    }
+
+    /// How many counts a section spans at `bpm`: 8 for a whole phrase, fewer
+    /// for the partial one at the end.
+    public static func counts(in section: RoutineSection, bpm: Double) -> Int {
+        Int((section.duration * bpm / 60).rounded())
     }
 
     /// Equal sections of about `length` seconds, for videos without a usable

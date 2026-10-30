@@ -105,19 +105,21 @@ func findsTheTempoOfAClickTrack(bpm: Double) throws {
 @Test func slicesIntoWholeEightCountPhrases() {
     let grid = BeatGrid(bpm: 120, beats: stride(from: 0.1, to: 20, by: 0.5).map { $0 }, firstDownbeat: 1)
     let sections = Sectioner.eightCounts(grid, start: 0, end: 20)
-    // Each phrase runs "1" to "1": the 0.6 s pickup and the 3.4 s tail are
-    // left out of the sections.
-    #expect(sections.map(\.start) == [0.6, 4.6, 8.6, 12.6])
-    #expect(sections.map(\.end) == [4.6, 8.6, 12.6, 16.6])
-    #expect(sections.map(\.index) == [0, 1, 2, 3])
+    // Each phrase runs "1" to "1". The 0.6 s pickup is left out; the 3.4 s
+    // tail (7 counts) is a last, shorter section.
+    #expect(sections.map(\.start) == [0.6, 4.6, 8.6, 12.6, 16.6])
+    #expect(sections.map(\.end) == [4.6, 8.6, 12.6, 16.6, 20])
+    #expect(sections.map(\.index) == [0, 1, 2, 3, 4])
+    #expect(sections.map { Sectioner.counts(in: $0, bpm: 120) } == [8, 8, 8, 8, 7])
 }
 
 @Test func phrasesStartOnTheOneAfterAPickup() {
     // Three beats (1.5 s) before the first "1".
     let grid = BeatGrid(bpm: 120, beats: stride(from: 0.0, to: 20, by: 0.5).map { $0 }, firstDownbeat: 3)
     let sections = Sectioner.eightCounts(grid, start: 0, end: 20)
-    #expect(sections.map(\.start) == [1.5, 5.5, 9.5, 13.5])
-    #expect(sections.allSatisfy { abs($0.duration - 4) < 1e-9 })
+    #expect(sections.map(\.start) == [1.5, 5.5, 9.5, 13.5, 17.5])
+    #expect(sections.dropLast().allSatisfy { abs($0.duration - 4) < 1e-9 })
+    #expect(sections.last.map { Sectioner.counts(in: $0, bpm: 120) } == 5)
 }
 
 @Test func aPhraseEndingAtTheTrimPointCounts() {
@@ -145,4 +147,10 @@ func findsTheTempoOfAClickTrack(bpm: Double) throws {
     let sections = [RoutineSection(index: 0, start: 0.58, end: 4.4)]
     #expect(try JSONDecoder().decode(BeatGrid.self, from: JSONEncoder().encode(grid)) == grid)
     #expect(try JSONDecoder().decode([RoutineSection].self, from: JSONEncoder().encode(sections)) == sections)
+}
+
+@Test func aTailOfOneCountIsNotASection() {
+    let grid = BeatGrid(bpm: 120, beats: stride(from: 0.0, to: 9, by: 0.5).map { $0 }, firstDownbeat: 0)
+    #expect(Sectioner.eightCounts(grid, start: 0, end: 8.5).map(\.end) == [4, 8])
+    #expect(Sectioner.eightCounts(grid, start: 0, end: 9).map(\.end) == [4, 8, 9])
 }
