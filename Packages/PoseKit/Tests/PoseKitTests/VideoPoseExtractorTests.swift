@@ -69,3 +69,10 @@ private func makeBlankVideo(seconds: Int, fps: Int32) async throws -> URL {
     #expect(sequence.frames(in: -1...(-0.5)).isEmpty)
     #expect(sequence.frames(in: 0.9...2).count == 1)
 }
+
+@Test func slicingKeepsTheFramesInRange() {
+    let frames = (0..<10).map { PoseFrame(time: Double($0) / 10, joints: [:]) }
+    let slice = PoseSequence(start: 0, end: 1, frames: frames).slice(from: 0.25, to: 0.55)
+    #expect(slice.start == 0.25 && slice.end == 0.55)
+    #expect(slice.frames.map(\.time) == [0.3, 0.4, 0.5])
+}

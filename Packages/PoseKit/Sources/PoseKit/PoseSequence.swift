@@ -32,6 +32,11 @@ public struct PoseSequence: Codable, Equatable, Sendable {
         return frames[lower..<upper]
     }
 
+    /// The part of the sequence between `start` and `end`, e.g. one section.
+    public func slice(from start: TimeInterval, to end: TimeInterval) -> PoseSequence {
+        PoseSequence(start: start, end: end, frames: Array(frames(in: start...end)))
+    }
+
     /// Binary search for the first frame at or after `time`.
     private func firstIndex(atOrAfter time: TimeInterval) -> Int {
         var low = 0, high = frames.count

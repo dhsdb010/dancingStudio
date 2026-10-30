@@ -6,11 +6,13 @@ import ChoreoKit
 /// right, and a rating for every half-second step.
 struct PracticeView: View {
     let displaySize: CGSize
+    let beats: BeatGrid?
     @State private var model: PracticeModel
     @State private var showingResults = false
 
-    init(url: URL, sequence: PoseSequence, displaySize: CGSize) {
+    init(url: URL, sequence: PoseSequence, beats: BeatGrid?, displaySize: CGSize) {
         self.displaySize = displaySize
+        self.beats = beats
         _model = State(initialValue: PracticeModel(url: url, sequence: sequence, displaySize: displaySize))
     }
 
@@ -56,12 +58,17 @@ struct PracticeView: View {
     }
 
     private var referencePane: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             PlayerLayerView(player: model.player.player)
             TimelineView(.animation) { _ in
                 if let pose = model.sequence.frame(at: model.player.player.currentTime().seconds), !pose.joints.isEmpty {
                     SkeletonView(frame: pose, color: .green)
                 }
+            }
+            if let beats {
+                CountBadge(beats: beats, player: model.player.player)
+                    .scaleEffect(0.75, anchor: .topLeading)
+                    .padding(6)
             }
         }
         .aspectRatio(displaySize, contentMode: .fit)

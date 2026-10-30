@@ -2,8 +2,8 @@ import AVFoundation
 import SwiftUI
 import PoseKit
 
-/// Trim an imported video to the part to learn, then extract its poses.
-/// Shows the skeleton replay when analysis finishes.
+/// Trim an imported video to the part to learn, then extract its poses and
+/// find its beat. Shows the step-by-step player when analysis finishes.
 struct PrepareRoutineView: View {
     let video: PickedVideo
 
@@ -16,15 +16,16 @@ struct PrepareRoutineView: View {
     private enum Phase {
         case trimming
         case analyzing(progress: Double)
-        case ready(PoseSequence)
+        case findingBeat
+        case ready(RoutineAnalysis)
         case failed(String)
     }
 
     var body: some View {
         Group {
             switch phase {
-            case .ready(let sequence):
-                RoutinePlayerView(url: video.url, sequence: sequence, displaySize: displaySize)
+            case .ready(let analysis):
+                RoutinePlayerView(url: video.url, analysis: analysis, displaySize: displaySize)
             case .analyzing(let progress):
                 VStack(spacing: 16) {
                     ProgressView(value: progress)
@@ -33,6 +34,12 @@ struct PrepareRoutineView: View {
                         .foregroundStyle(.secondary)
                 }
                 .padding(32)
+            case .findingBeat:
+                VStack(spacing: 16) {
+                    ProgressView()
+                    Text("Finding the beat…")
+                        .foregroundStyle(.secondary)
+                }
             case .failed(let reason):
                 ContentUnavailableView("Couldn't analyze this video", systemImage: "exclamationmark.triangle",
                                        description: Text(reason))
@@ -96,7 +103,8 @@ struct PrepareRoutineView: View {
                     if case .analyzing = phase { phase = .analyzing(progress: value) }
                 }
             }
-            phase = .ready(sequence)
+            phase = .findingBeat
+            phase = .ready(await RoutineAnalysis.make(url: video.url, sequence: sequence))
         } catch {
             phase = .failed(error.localizedDescription)
         }

@@ -84,6 +84,9 @@ Published student and academic systems report roughly 15% disagreement with huma
    - Decide the pose backend and the minimum iPhone.
    - **Result, 2026-10-29, iPhone SE (3rd gen, A15):** live 2D body pose at 720p from the front camera holds about 30 fps, the camera's full frame rate, so Vision keeps up with every frame. The skeleton overlay lines up with the body, so the rotation and mirroring are correct. Not measured yet: hands, video import and the accuracy comparison against MediaPipe.
 1. **MVP (solo):** import and trim a video → process → auto-slice with manual adjustment → practise a segment with slow-down and live scoring → results screen.
+   - **Status, 2026-10-29:** import, trim, pose extraction with dancer tracking, slow-down playback, practice mode with live scoring and results are done and tested on device. Scoring thresholds are frozen at Perfect ≥ 0.92, Good ≥ 0.85, OK ≥ 0.75, with the first two missing limbs forgiven and each further one scoring 0.5.
+   - **Auto-slice, 2026-10-29:** the clip's soundtrack is beat-tracked (spectral-flux onsets, autocorrelation tempo, least-squares beat fit, accent-based downbeat) and the routine is cut into 8-counts that can be looped and practised one at a time, with a live 1–8 count on the video. Clips without a steady beat fall back to ~4 s parts. Still to do: manual adjustment of the cuts and the downbeat.
+   - **Later: difficulty levels.** Offer Easy / Medium / Hard, each a set of thresholds plus timing and missing-limb tolerances. The current values become Medium. Tune them with a real dancer before release.
 2. **Studio:** accounts and roles, studio and class creation with invite codes, teacher upload and slicing editor, assignment push notifications, and a view of student progress for teachers.
 3. **Library and polish:** the memory library, streaks and history, 3D avatar replay, and optional server-side MocapNET or GVHMR for higher-quality 3D.
 
